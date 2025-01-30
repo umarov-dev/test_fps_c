@@ -1,4 +1,4 @@
-import './videoList.sass';
+import './videoList.scss';
 import { IVideoList } from '../types';
 
 interface VideoListPlayerProps {
@@ -21,6 +21,7 @@ const VideoList: React.FC<VideoListPlayerProps>  = ({ currentVideos, deleteVideo
                 controls
                 autoPlay
                 muted
+                data-src={link}
                 className="rounded-lg shadow-md"
               >
                 <source src={link} type="video/mp4" />

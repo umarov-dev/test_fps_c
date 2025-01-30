@@ -1,0 +1,60 @@
+.convas  {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  & .fps {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 50px;
+  }
+}
+
+
+
+
+.videoplayer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  overflow: hidden;
+}
+
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+  overflow: auto;
+}
+
+
+.video_item {
+  display: flex;
+  & div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.remove-btn, .add-btn {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
+.add-btn {
+  background-color: #4caf50;
+}
+
+.remove-btn:hover, .add-btn:hover {
+  opacity: 0.8;
+}
