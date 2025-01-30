@@ -7,7 +7,7 @@ interface BackgroundSelectorProps {
   onBackgroundChange: (background: string | null) => void;
 }
 
-const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({ selectedBackground, onBackgroundChange }) => {
+const BackgroundSelector: React.FC<BackgroundSelectorProps> = React.memo(({ selectedBackground, onBackgroundChange }) => {
 
   return (
     <div className="flex flex-col items-center">
@@ -29,6 +29,6 @@ const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({ selectedBackgro
       ))}
     </div>
   );
-};
+});
 
 export default BackgroundSelector;

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { IVideoList } from '../../types';
 import FPSCounter from './FpsCounter'; // Импортируем новый компонент
 
@@ -13,7 +13,7 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
   const visibleCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Состояние для текущего фонового изображения
-  const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null);
+  const [backgroundImage, setBackgroundImage] = React.useState<HTMLImageElement | null>(null);
 
   // Ref для AbortController
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -48,7 +48,6 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
 
   // Эффект для загрузки фона
   useEffect(() => {
-    // Проверяем, действительно ли фон изменился
     if (selectedBackground !== prevSelectedBackground.current) {
       prevSelectedBackground.current = selectedBackground;
 
@@ -106,16 +105,20 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
     // Отрисовываем фон при первой загрузке или изменении
     drawBackground();
 
+    let animationFrameId: number;
+
     const draw = () => {
       // Очистка скрытого канваса
       hiddenCtx.clearRect(0, 0, totalWidth, totalHeight);
 
       // Фильтруем видимые видео
       const visibleVideos = currentVideos.filter(video => video.visible);
+
+      // Поиск всех видеоэлементов один раз
       const videos = visibleVideos.map(video => {
         const videoElement = document.querySelector(`video[data-src="${video.link}"]`) as HTMLVideoElement;
         return videoElement;
-      });
+      }).filter(video => video !== null); // Убираем null, если видео не найдено
 
       // Минимальная ширина видео (например, 200px)
       const minVideoWidth = 200;
@@ -165,13 +168,15 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
       visibleCtx.clearRect(0, 0, totalWidth, totalHeight); // Очищаем видимый канвас
       visibleCtx.drawImage(hiddenCanvas, 0, 0); // Рисуем видео поверх фона
 
-      requestAnimationFrame(draw);
+      animationFrameId = requestAnimationFrame(draw);
     };
 
-    requestAnimationFrame(draw);
+    draw();
 
     // Очистка ресурсов при размонтировании компонента
     return () => {
+      cancelAnimationFrame(animationFrameId);
+
       currentVideos.forEach(video => {
         if (!video.visible) {
           const videoElement = document.querySelector(`video[data-src="${video.link}"]`) as HTMLVideoElement;
@@ -185,7 +190,6 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
 
   return (
     <div className="convas" style={{ position: 'relative', width: '800px', height: '450px' }}>
-      {/* Фоновый Canvas */}
       <canvas
         ref={backgroundCanvasRef}
         width={800}
@@ -198,7 +202,6 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
         }}
       ></canvas>
 
-      {/* Скрытый Canvas */}
       <canvas
         ref={hiddenCanvasRef}
         width={800}
@@ -206,7 +209,6 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
         style={{ display: 'none' }}
       ></canvas>
 
-      {/* Видимый Canvas */}
       <canvas
         ref={visibleCanvasRef}
         width={800}
@@ -220,7 +222,6 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
         }}
       ></canvas>
 
-      {/* Компонент FPSCounter */}
       <FPSCounter />
     </div>
   );

@@ -1,5 +1,6 @@
 import "./videoList.scss";
 import { IVideoList } from "../../types";
+import { memo } from "react";
 
 interface VideoListPlayerProps {
   currentVideos: IVideoList[];
@@ -7,7 +8,7 @@ interface VideoListPlayerProps {
   addVideoBack: (videoName: string) => void;
 }
 
-const VideoList: React.FC<VideoListPlayerProps> = ({
+const VideoList: React.FC<VideoListPlayerProps> = memo(({
   currentVideos,
   deleteVideo,
   addVideoBack,
@@ -45,6 +46,6 @@ const VideoList: React.FC<VideoListPlayerProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default VideoList;
