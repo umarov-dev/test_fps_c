@@ -1,39 +1,53 @@
-import { useCallback, useState } from 'react';
-import CanvasVideoPlayer from '../component/canvasVideoPlayer.tsx';
-import VideoList from '../component/videoList';
-import { videoSources } from '../const/index.ts';
-import { IVideoList } from '../types/index.ts';
-
+import { useCallback, useState } from "react";
+import CanvasVideoPlayer from "../components/canvas/canvasVideoPlayer.tsx";
+import VideoList from "../components/video_list/videoList.tsx";
+import { videoSources } from "../const/index.ts";
+import { IVideoList } from "../types/index.ts";
+import BackgroundSelector from "../components/background_select/backgroundSelect.tsx";
+import './app.css';
 
 function App() {
   const [currentVideos, setVideos] = useState<IVideoList[]>(videoSources);
-
+  const [selectedBackground, setSelectedBackground] = useState<string | null>(null);
   const deleteVideo = useCallback((videoName: string) => {
-    setVideos(prevVideos =>
-      prevVideos.map(video =>
+    setVideos((prevVideos) =>
+      prevVideos.map((video) =>
         video.link === videoName ? { ...video, visible: false } : video
       )
     );
   }, []);
 
   const addVideoBack = useCallback((videoName: string) => {
-    setVideos(prevVideos =>
-      prevVideos.map(video =>
+    setVideos((prevVideos) =>
+      prevVideos.map((video) =>
         video.link === videoName ? { ...video, visible: true } : video
       )
     );
   }, []);
 
+  const setSelectedBackgroundFunc = useCallback((even: string | null)=> setSelectedBackground(even), []);
+
   return (
     <div className="App">
-      <h1>Тест FPS</h1>
-      <div className='convas_videoplayer'>
-        <CanvasVideoPlayer currentVideos={currentVideos}/>
+      <h1 className="text-center p-3 font-bold text-3xl">Тест FPS</h1>
+      <div className="flex justify-center">
+        <div className="w-max">
+          <CanvasVideoPlayer currentVideos={currentVideos} selectedBackground={selectedBackground}/>
+        </div>
+        <div className="w-20">
+          <BackgroundSelector
+            selectedBackground={selectedBackground}
+            onBackgroundChange={setSelectedBackgroundFunc}
+            />
+        </div>
       </div>
-      <VideoList currentVideos={currentVideos} deleteVideo={deleteVideo} addVideoBack={addVideoBack}/>
+      <VideoList
+        currentVideos={currentVideos}
+        deleteVideo={deleteVideo}
+        addVideoBack={addVideoBack}
+      />
     </div>
   );
 }
-
 
 export default App;

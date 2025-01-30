@@ -1,0 +1,21 @@
+.select_back { 
+    @apply border-2 duration-300 border-red-800 rounded-xl my-3 p-2 bg-red-300;
+    &:hover { 
+        @apply scale-110;
+    }
+}
+.selected_back { 
+    @apply border-2 duration-300 border-green-800 rounded-xl my-3 p-2 bg-green-300;
+    &:hover { 
+        @apply scale-110;
+    }
+}
+
+
+
+.deleteBack {
+    @apply border-2 duration-300 bg-blue-300 border-blue-800 rounded-xl my-3;
+    &:hover { 
+        @apply scale-105;
+    }
+}
