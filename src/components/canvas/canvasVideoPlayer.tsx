@@ -1,13 +1,14 @@
 import React, { useRef, useEffect } from 'react';
 import { IVideoList } from '../../types';
-import FPSCounter from './FpsCounter'; // Импортируем новый компонент
+import FPSCounter from './FpsCounter';
 
 interface CanvasVideoPlayerProps {
   currentVideos: IVideoList[];
+  cameraStream: MediaStream | null;
   selectedBackground: string | null;
 }
 
-const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ currentVideos, selectedBackground }) => {
+const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ cameraStream, currentVideos, selectedBackground }) => {
   const backgroundCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const hiddenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const visibleCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -21,26 +22,24 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
   // Ref для предыдущего значения selectedBackground
   const prevSelectedBackground = useRef<string | null>(null);
 
+  // Ref для видеопотока с камеры
+  const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
+
   // Функция для загрузки фонового изображения
   const loadBackgroundImage = (src: string) => {
-    // Отменяем предыдущую загрузку, если она была запущена
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
     const img = new Image();
     img.src = src;
-
     img.onload = () => {
-      // Проверяем, не была ли загрузка отменена
       if (!controller.signal.aborted) {
         setBackgroundImage(img);
       }
     };
-
     img.onerror = () => {
       console.error(`Не удалось загрузить фоновое изображение: ${src}`);
     };
@@ -50,7 +49,6 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
   useEffect(() => {
     if (selectedBackground !== prevSelectedBackground.current) {
       prevSelectedBackground.current = selectedBackground;
-
       if (selectedBackground) {
         loadBackgroundImage(selectedBackground);
       } else {
@@ -58,7 +56,6 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
       }
     }
 
-    // При размонтировании компонента отменяем загрузку
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -72,8 +69,7 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
       !backgroundCanvasRef.current ||
       !hiddenCanvasRef.current ||
       !visibleCanvasRef.current
-    )
-      return;
+    ) return;
 
     const backgroundCanvas = backgroundCanvasRef.current;
     const hiddenCanvas = hiddenCanvasRef.current;
@@ -107,9 +103,31 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
 
     let animationFrameId: number;
 
+    // Создаем один видеоэлемент для камеры
+    if (cameraStream && !cameraVideoRef.current) {
+      const video = document.createElement('video');
+      video.srcObject = cameraStream;
+      video.play();
+      cameraVideoRef.current = video;
+    }
+
     const draw = () => {
       // Очистка скрытого канваса
       hiddenCtx.clearRect(0, 0, totalWidth, totalHeight);
+
+      // Отрисовка видеопотока с камеры
+      if (cameraVideoRef.current) {
+        const video = cameraVideoRef.current;
+
+        // Проверяем, что видео готово к отрисовке
+        if (video.readyState >= video.HAVE_CURRENT_DATA) {
+          const videoAspectRatio = video.videoWidth / video.videoHeight;
+          const videoWidth = totalWidth * 0.3; // Занимает 30% ширины экрана
+          const videoHeight = videoWidth / videoAspectRatio;
+
+          hiddenCtx.drawImage(video, 0, 0, videoWidth, videoHeight);
+        }
+      }
 
       // Фильтруем видимые видео
       const visibleVideos = currentVideos.filter(video => video.visible);
@@ -126,7 +144,7 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
 
       // Расчет максимального количества видео в одной строке
       const maxVideosPerRow = Math.floor((totalWidth + spacing) / (minVideoWidth + spacing));
-      const rowSpacing = (maxVideosPerRow > 1) ? spacing : 0;
+      const rowSpacing = maxVideosPerRow > 1 ? spacing : 0;
 
       // Рисование видео на скрытом Canvas
       let currentX = 0;
@@ -176,7 +194,11 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
     // Очистка ресурсов при размонтировании компонента
     return () => {
       cancelAnimationFrame(animationFrameId);
-
+      if (cameraVideoRef.current) {
+        cameraVideoRef.current.pause();
+        cameraVideoRef.current.srcObject = null;
+        cameraVideoRef.current = null;
+      }
       currentVideos.forEach(video => {
         if (!video.visible) {
           const videoElement = document.querySelector(`video[data-src="${video.link}"]`) as HTMLVideoElement;
@@ -186,10 +208,11 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
         }
       });
     };
-  }, [currentVideos, backgroundImage]);
+  }, [currentVideos, backgroundImage, cameraStream]);
 
   return (
     <div className="convas" style={{ position: 'relative', width: '800px', height: '450px' }}>
+      {/* Канвас для фона */}
       <canvas
         ref={backgroundCanvasRef}
         width={800}
@@ -202,6 +225,7 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
         }}
       ></canvas>
 
+      {/* Скрытый канвас для отрисовки видео */}
       <canvas
         ref={hiddenCanvasRef}
         width={800}
@@ -209,6 +233,7 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
         style={{ display: 'none' }}
       ></canvas>
 
+      {/* Видимый канвас */}
       <canvas
         ref={visibleCanvasRef}
         width={800}
@@ -222,6 +247,7 @@ const CanvasVideoPlayer: React.FC<CanvasVideoPlayerProps> = React.memo(({ curren
         }}
       ></canvas>
 
+      {/* Компонент для отслеживания FPS */}
       <FPSCounter />
     </div>
   );
